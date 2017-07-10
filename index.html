@@ -40,7 +40,9 @@
             </div>
         </div>
         <div class="col-sm-8">
+
             <div id="messages" class="chat"></div>
+
             <form action="" id="messageForm">
                 <div class="form-group">
                     <label>Enter Message</label>
@@ -62,29 +64,29 @@
 
         var socket = io(); // get from script we inserted
 
-
-       /* socket.on("connect",function () {
+        socket.on("connect",function () {
             var id = socket.id;
             console.log("client"+id)
-        });*/
+        });
 
         $('form').submit(function () {
-            socket.emit('chat message', $('#m').val()); //getting msgval & sent event to server
+          //  socket.emit('chat message', $('#m').val()); //getting msgval & sent event to server
+            var chatob ={
+                msg:$('#m').val(),
+                user:$username.val()
+            };
+            console.log(chatob);
+            if($('#m').val())
+            socket.emit("save chat",chatob);
             $('#m').val(''); // clear msg box val
             return false;
         });
 
-
-        socket.on('chat message', function (data) {
-            if (data.user) {
-                $('#messages').append('<div class="well"><strong>' + data.user + '</strong> :' + data.msg + '</div>');
-                if (data.msg.indexOf('@') > -1) {
-                    var htmltxt = "helooooo";
-                    console.log(htmltxt);
-                }
-            }
+     /*   socket.on('chat message', function (data) {
+            console.log("data>>>>>>>>>>",data);
+            socket.emit('save chat',data)
         });
-
+*/
         $userForm.submit(function () {
             socket.emit('new user', $username.val());
         });
@@ -96,12 +98,11 @@
         socket.on('save user success', function (data) {
             if (data) {
                 socket.emit("get users");
-
+                socket.emit("getMessages");
                 $userFormArea.hide();
                 $messageArea.show();
-                $username.val('');
+               // $username.val('');
             }
-
         });
 
         socket.on("get users failed",function (err) {
@@ -116,14 +117,36 @@
             $users.html(html)
         });
 
+        socket.on("save chat success",function (data) {
+            console.log(data,"save chat success");
+           $('#messages').append('<div class="well"><strong>' + data.postedBy + '</strong> :' + data.message + '</div>');
+        });
+
+        socket.on('get messages success', function (data) {
+            /*for (i = 0; i < data.length; i++) {
+                $('#messages').append('<div class="well"><strong>' + data[i].postedBy + '</strong> :' + data[i].message + '</div>');
+            }*/
+            var newHTML = [];
+            if(data)
+                for (var i = 0; i < data.length; i++) {
+                    newHTML.push('<div class="well"><strong>' + data[i].postedBy + '</strong> :' + data[i].message + '</div>');
+                }
+            $("#messages").html(newHTML.join(""));
+        });
+
+
+        socket.on("get messages failed",function (err) {
+            console.log(err)
+        });
+
         socket.on("update user failed",function (err) {
             console.log(err)
         });
 
         socket.on('update user success', function (data) {
             socket.emit("get users");
-        })
-
+        });
+        
     });
 </script>
 </body>
