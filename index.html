@@ -2,14 +2,15 @@
 <html>
 <head>
     <title>Socket.IO chat</title>
-<style>
-    body{
-        margin-top: 30px;
-    }
-    #messageArea{
-        display: none;
-    }
-</style>
+    <style>
+        body {
+            margin-top: 30px;
+        }
+
+        #messageArea {
+            display: none;
+        }
+    </style>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -31,25 +32,25 @@
             </form>
         </div>
     </div>
-<div id="messageArea" class="row">
-<div class="col-sm-4">
-    <div class="well">
-        <h3>Online Users</h3>
-        <ul class="list-group" id="users"></ul>
+    <div id="messageArea" class="row">
+        <div class="col-sm-4">
+            <div class="well">
+                <h3>Online Users</h3>
+                <ul class="list-group" id="users"></ul>
+            </div>
+        </div>
+        <div class="col-sm-8">
+            <div id="messages" class="chat"></div>
+            <form action="" id="messageForm">
+                <div class="form-group">
+                    <label>Enter Message</label>
+                    <textarea class="form-control" id="m"></textarea>
+                    <br>
+                    <button class="btn btn-primary">Send</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
-<div class="col-sm-8">
-<div id="messages" class="chat"></div>
-<form action="" id="messageForm">
-    <div class="form-group">
-        <label>Enter Message</label>
-        <textarea class="form-control" id="m"></textarea>
-        <br>
-        <button class="btn btn-primary">Send</button>
-    </div>
-</form>
-</div>
-</div>
 </div>
 <script>
     $(function () {
@@ -60,33 +61,67 @@
         var $username = $('#username');
 
         var socket = io(); // get from script we inserted
+
+
+       /* socket.on("connect",function () {
+            var id = socket.id;
+            console.log("client"+id)
+        });*/
+
         $('form').submit(function () {
             socket.emit('chat message', $('#m').val()); //getting msgval & sent event to server
             $('#m').val(''); // clear msg box val
             return false;
         });
+
+
         socket.on('chat message', function (data) {
-            if(data.user)
-            $('#messages').append('<div class="well"><strong>'+data.user+'</strong> :'+data.msg+'</div>')
+            if (data.user) {
+                $('#messages').append('<div class="well"><strong>' + data.user + '</strong> :' + data.msg + '</div>');
+                if (data.msg.indexOf('@') > -1) {
+                    var htmltxt = "helooooo";
+                    console.log(htmltxt);
+                }
+            }
         });
 
         $userForm.submit(function () {
-            socket.emit('new user', $username.val(),function (data) {
-                if(data){
-                    $userFormArea.hide();
-                    $messageArea.show();
-                }
-            });
-            $username.val('');
-            return false;
+            socket.emit('new user', $username.val());
         });
 
-        socket.on('get users',function (data) {
+        socket.on('save user failed', function (err) {
+            console.log(err)
+        });
+
+        socket.on('save user success', function (data) {
+            if (data) {
+                socket.emit("get users");
+
+                $userFormArea.hide();
+                $messageArea.show();
+                $username.val('');
+            }
+
+        });
+
+        socket.on("get users failed",function (err) {
+            console.log(err)
+        });
+
+        socket.on('get users success', function (data) {
             var html = " ";
-            for(i=0; i<data.length;i++){
-                html+='<li class="list-group-item">'+data[i]+'</li>'
+            for (i = 0; i < data.length; i++) {
+                html += '<li class="list-group-item">' + data[i].username + '</li>'
             }
             $users.html(html)
+        });
+
+        socket.on("update user failed",function (err) {
+            console.log(err)
+        });
+
+        socket.on('update user success', function (data) {
+            socket.emit("get users");
         })
 
     });
